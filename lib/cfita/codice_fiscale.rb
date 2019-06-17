@@ -1,19 +1,25 @@
 # frozen_string_literal: true
 
 require 'active_support/all'
-# require './belfiore.rb'
+require 'cfita/codici_catastali'
 
 module Cfita
   # Controllo codice fiscale italiano
   class CodiceFiscale
     attr_reader :fiscal_code,
                 :sex,
+                :birth_place,
                 :birth_date,
                 :data,
                 :errors
 
-    def initialize(fiscal_code)
+    def self.ccat
+      @ccat ||= JSON.parse(open('ccat.json'))
+    end
+
+    def initialize(fiscal_code, birth_place: nil)
       @fiscal_code = fiscal_code.upcase.strip
+      @birth_place = birth_place
       @data = {}
       @errors = []
       parse
@@ -23,8 +29,10 @@ module Cfita
       fiscal_code
     end
 
-    def valid?
-      errors.empty?
+    def valid?(birth_place: nil)
+      result = errors.empty?
+      result = birth_place?(birth_place) if result && birth_place
+      result
     end
 
     private
@@ -38,6 +46,7 @@ module Cfita
       return if errors.any?
 
       check_birth_date
+      check_birth_place
     end
 
     def check_size
@@ -62,6 +71,28 @@ module Cfita
         @data[:sex] = 'F'
       else
         @errors << 'Cifra decina giorno di nascita errata'
+      end
+    end
+
+    def check_birth_place
+      # debugger
+      letter = @fiscal_code[11]
+      numbers =
+        @fiscal_code[12..14]
+        .split(//)
+        .map do |c|
+          i = OMOCODICI.index(c)
+          i ? i.to_s : c
+        end
+        .join
+      codice_catastale = letter + numbers
+
+      birth_places = CODICI_CATASTALI[codice_catastale]
+      @errors << "Codice istat #{codice_catastale} non trovato" unless birth_places
+      if @birth_place
+        unless birth_places&.include?(@birth_place)
+          @errors << "Luogo di nascita #{@birth_place} non coerente, al codice catastale #{codice_catastale} corrisponde a #{birth_places.join(' o a ')}"
+        end
       end
     end
 
