@@ -19,7 +19,7 @@ module Cfita
     def initialize(fiscal_code, birth_place: nil, birth_date: nil)
       @fiscal_code = fiscal_code.upcase.strip
       @birth_place = birth_place&.upcase
-      p @birth_date = birth_date && (birth_date.is_a?(Date) ? birth_date : Date.parse(birth_date))
+      @birth_date = birth_date && (birth_date.is_a?(Date) ? birth_date : Date.parse(birth_date))
       @data = {}
       @errors = []
       parse
