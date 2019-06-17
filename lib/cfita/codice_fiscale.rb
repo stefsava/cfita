@@ -10,16 +10,16 @@ module Cfita
                 :sex,
                 :birth_place,
                 :birth_date,
-                :data,
                 :errors
 
     def self.ccat
       @ccat ||= JSON.parse(open('ccat.json'))
     end
 
-    def initialize(fiscal_code, birth_place: nil)
+    def initialize(fiscal_code, birth_place: nil, birth_date: nil)
       @fiscal_code = fiscal_code.upcase.strip
-      @birth_place = birth_place
+      @birth_place = birth_place&.upcase
+      p @birth_date = birth_date && (birth_date.is_a?(Date) ? birth_date : Date.parse(birth_date))
       @data = {}
       @errors = []
       parse
@@ -66,11 +66,16 @@ module Cfita
     def check_sex
       case @fiscal_code[9]
       when /[0-3LMNP]/
-        @data[:sex] = 'M'
+        sex = 'M'
       when /[4-7QRST]/
-        @data[:sex] = 'F'
+        sex = 'F'
       else
         @errors << 'Cifra decina giorno di nascita errata'
+      end
+      if @sex
+        errors << 'Sesso errato' if @sex != sex
+      else
+        @sex = sex
       end
     end
 
@@ -108,19 +113,20 @@ module Cfita
       @errors << 'Cifra decina giorno di nascita errata' if day > 71
       return if @errors.any?
 
-      @data[:sex] = day > 40 ? 'F' : 'M'
-
       month = MESI.index(@fiscal_code[8])
       @errors << 'Mese errato' unless month
       return if @errors.any?
 
-      @birth_date =
-        Date.new(yy2yyyy(yy), month + 1, day % 40) rescue nil
+      date = Date.new(yy2yyyy(yy), month + 1, day % 40) rescue nil
 
-      @errors << 'Data di nascita errata' unless @birth_date
+      @errors << 'Data di nascita errata' unless date
       return if @errors.any?
 
-      @data[:birth_date] = @birth_date
+      if @birth_date
+        @errors << 'Data di nascita errata' if @birth_date != date
+      else
+        @birth_date = date
+      end
     end
 
     def yy2yyyy(yy)
