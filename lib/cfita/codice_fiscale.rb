@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support/all'
-require 'cfita/codici_catastali.rb'
+require 'cfita/codici_catastali'
 
 module Cfita
   # Controllo codice fiscale italiano
@@ -21,13 +21,16 @@ module Cfita
       birth_place: nil,
       birth_date: nil,
       name: nil,
-      surname: nil
+      surname: nil,
+      sex: nil
     )
       @fiscal_code = fiscal_code.upcase.strip
       @birth_place = birth_place&.upcase
-      @birth_date = birth_date && (birth_date.is_a?(Date) ? birth_date : Date.parse(birth_date))
+      @birth_date = birth_date
+      @birth_date = Date.parse(birth_date) if birth_date.is_a?(String)
       @name = name&.parameterize&.upcase
       @surname = surname&.parameterize&.upcase
+      @sex = sex&.upcase
       @errors = []
       parse
     end
@@ -54,6 +57,7 @@ module Cfita
       check_surname
       check_birth_date
       check_birth_place
+      check_sex
     end
 
     def check_name
