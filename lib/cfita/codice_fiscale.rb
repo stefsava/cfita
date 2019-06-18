@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support/all'
-require 'cfita/codici_catastali'
+require 'cfita/codici_catastali.rb'
 
 module Cfita
   # Controllo codice fiscale italiano
@@ -16,11 +16,18 @@ module Cfita
       @ccat ||= JSON.parse(open('ccat.json'))
     end
 
-    def initialize(fiscal_code, birth_place: nil, birth_date: nil)
+    def initialize(
+      fiscal_code,
+      birth_place: nil,
+      birth_date: nil,
+      name: nil,
+      surname: nil
+    )
       @fiscal_code = fiscal_code.upcase.strip
       @birth_place = birth_place&.upcase
       @birth_date = birth_date && (birth_date.is_a?(Date) ? birth_date : Date.parse(birth_date))
-      @data = {}
+      @name = name&.parameterize&.upcase
+      @surname = surname&.parameterize&.upcase
       @errors = []
       parse
     end
@@ -29,10 +36,8 @@ module Cfita
       fiscal_code
     end
 
-    def valid?(birth_place: nil)
-      result = errors.empty?
-      result = birth_place?(birth_place) if result && birth_place
-      result
+    def valid?
+      errors.empty?
     end
 
     private
@@ -45,8 +50,46 @@ module Cfita
       check_checksum
       return if errors.any?
 
+      check_name
+      check_surname
       check_birth_date
       check_birth_place
+    end
+
+    def check_name
+      return unless @name
+
+      a, b, c, d = consonants(@name)
+      name_code = (
+        (d ? [a, c, d] : [a, b, c]).compact.join +
+        vowels(@name).join +
+        'XXX'
+      )[0..2]
+
+      errors << "Il nome non corrisponde al codice '#{name_code}'" unless name_code == @fiscal_code[3..5]
+    end
+
+    def check_surname
+      return unless @surname
+
+      surname_code = (
+        consonants(@surname).join +
+        vowels(@surname).join +
+        'XXX'
+      )[0..2]
+
+      errors << "Il cognome non corrisponde al codice '#{surname_code}'" unless surname_code == @fiscal_code[0..2]
+    end
+
+    VOWELS = 'AEIOU'.chars.freeze
+    CONSONANTS = (('A'..'Z').to_a - VOWELS).freeze
+
+    def vowels(word)
+      word.chars.select { |char| char.in? VOWELS }
+    end
+
+    def consonants(word)
+      word.chars.select { |char| char.in? CONSONANTS }
     end
 
     def check_size
@@ -101,7 +144,7 @@ module Cfita
       end
     end
 
-    MESI = 'ABCDEHLMPRST'.freeze
+    MESI = 'ABCDEHLMPRST'
 
     def check_birth_date
       yy = cifre(6..7)
@@ -129,9 +172,9 @@ module Cfita
       end
     end
 
-    def yy2yyyy(yy)
+    def yy2yyyy(year_as_yy)
       Date.today.year -
-        (Date.today.year % 100 + 100 - yy ) % 100
+        (Date.today.year % 100 + 100 - year_as_yy) % 100
     end
 
     def cifre(range)
