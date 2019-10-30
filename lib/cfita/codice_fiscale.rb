@@ -43,6 +43,52 @@ module Cfita
       errors.empty?
     end
 
+    def cf_sex
+      return @cf_sex if @cf_sex
+      case @fiscal_code[9]
+      when /[0-3LMNP]/
+        @cf_sex = 'M'
+      when /[4-7QRST]/
+        @cf_sex = 'F'
+      else
+        @errors << 'Cifra decina giorno di nascita errata'
+      end
+    end
+
+    def cf_birth_places
+      return @cf_birth_places if @cf_birth_places
+
+      letter = @fiscal_code[11]
+      numbers =
+        @fiscal_code[12..14]
+        .split(//)
+        .map do |c|
+          i = OMOCODICI.index(c)
+          i ? i.to_s : c
+        end
+        .join
+      codice_catastale = letter + numbers
+      @cf_birth_places = CODICI_CATASTALI[codice_catastale]
+    end
+
+    def cf_birth_date
+      return @cf_birth_date if @cf_birth_date
+      yy = cifre(6..7)
+      return if @errors.any?
+
+      day = cifre(9..10)
+      return if @errors.any?
+
+      @errors << 'Cifra decina giorno di nascita errata' if day > 71
+      return if @errors.any?
+
+      month = MESI.index(@fiscal_code[8])
+      @errors << 'Mese errato' unless month
+      return if @errors.any?
+
+      @cf_birth_date = Date.new(yy2yyyy(yy), month + 1, day % 40) rescue nil
+    end
+
     private
 
     def parse
@@ -111,74 +157,38 @@ module Cfita
     end
 
     def check_sex
-      case @fiscal_code[9]
-      when /[0-3LMNP]/
-        sex = 'M'
-      when /[4-7QRST]/
-        sex = 'F'
-      else
-        @errors << 'Cifra decina giorno di nascita errata'
-      end
       if @sex
-        errors << 'Sesso errato' if @sex != sex
+        errors << 'Sesso errato' if @sex != cf_sex
       else
-        @sex = sex
+        @sex = cf_sex
       end
     end
 
     def check_birth_place
-      # debugger
-      letter = @fiscal_code[11]
-      numbers =
-        @fiscal_code[12..14]
-        .split(//)
-        .map do |c|
-          i = OMOCODICI.index(c)
-          i ? i.to_s : c
-        end
-        .join
-      codice_catastale = letter + numbers
-
-      birth_places = CODICI_CATASTALI[codice_catastale]
-      @errors << "Codice istat #{codice_catastale} non trovato" unless birth_places
+      @errors << "Codice istat #{codice_catastale} non trovato" unless cf_birth_places
       if @birth_place
-        unless birth_places&.include?(@birth_place)
-          @errors << "Luogo di nascita #{@birth_place} non coerente, al codice catastale #{codice_catastale} corrisponde a #{birth_places.join(' o a ')}"
+        unless cf_birth_places&.include?(@birth_place)
+          @errors << "Luogo di nascita #{@birth_place} non coerente, al codice catastale #{codice_catastale} corrisponde a #{cf_birth_places.join(' o a ')}"
         end
       end
     end
 
     MESI = 'ABCDEHLMPRST'
 
-    def check_birth_date
-      yy = cifre(6..7)
-      return if @errors.any?
-
-      day = cifre(9..10)
-      return if @errors.any?
-
-      @errors << 'Cifra decina giorno di nascita errata' if day > 71
-      return if @errors.any?
-
-      month = MESI.index(@fiscal_code[8])
-      @errors << 'Mese errato' unless month
-      return if @errors.any?
-
-      date = Date.new(yy2yyyy(yy), month + 1, day % 40) rescue nil
-
-      @errors << 'Data di nascita errata' unless date
-      return if @errors.any?
-
-      if @birth_date
-        @errors << 'Data di nascita errata' if @birth_date != date
-      else
-        @birth_date = date
-      end
-    end
-
     def yy2yyyy(year_as_yy)
       Date.today.year -
         (Date.today.year % 100 + 100 - year_as_yy) % 100
+    end
+
+    def check_birth_date
+      @errors << 'Data di nascita errata' unless cf_birth_date
+      return if @errors.any?
+
+      if @birth_date
+        @errors << 'Data di nascita errata' if @birth_date != cf_birth_date
+      else
+        @birth_date = cf_birth_date
+      end
     end
 
     def cifre(range)
