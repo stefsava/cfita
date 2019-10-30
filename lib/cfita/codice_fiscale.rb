@@ -58,16 +58,6 @@ module Cfita
     def cf_birth_places
       return @cf_birth_places if @cf_birth_places
 
-      letter = @fiscal_code[11]
-      numbers =
-        @fiscal_code[12..14]
-        .split(//)
-        .map do |c|
-          i = OMOCODICI.index(c)
-          i ? i.to_s : c
-        end
-        .join
-      codice_catastale = letter + numbers
       @cf_birth_places = CODICI_CATASTALI[codice_catastale]
     end
 
@@ -90,6 +80,20 @@ module Cfita
     end
 
     private
+
+    def codice_catastale 
+      return @codice_catastale if @codice_catastale
+      letter = @fiscal_code[11]
+      numbers =
+        @fiscal_code[12..14]
+        .split(//)
+        .map do |c|
+          i = OMOCODICI.index(c)
+          i ? i.to_s : c
+        end
+        .join
+      letter + numbers
+    end
 
     def parse
       check_size
