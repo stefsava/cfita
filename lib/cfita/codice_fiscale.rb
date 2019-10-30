@@ -64,17 +64,12 @@ module Cfita
     def cf_birth_date
       return @cf_birth_date if @cf_birth_date
       yy = cifre(6..7)
-      return if @errors.any?
-
       day = cifre(9..10)
-      return if @errors.any?
-
-      @errors << 'Cifra decina giorno di nascita errata' if day > 71
-      return if @errors.any?
-
+      @errors << 'Cifra decina giorno di nascita errata' if day && day > 71
+ 
       month = MESI.index(@fiscal_code[8])
       @errors << 'Mese errato' unless month
-      return if @errors.any?
+      return unless yy && month && day
 
       @cf_birth_date = Date.new(yy2yyyy(yy), month + 1, day % 40) rescue nil
     end

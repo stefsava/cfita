@@ -3,8 +3,8 @@
 Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.4'
   s.name        = 'cfita'
-  s.version     = '0.1.2'
-  s.date        = '2019-06-18'
+  s.version     = '0.1.3'
+  s.date        = '2019-10-30'
   s.summary     = 'Italian fiscal code checker'
   s.description = 'Controllo codici fiscali italiani'
   s.authors     = ['Stefano Savanelli']
