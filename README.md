@@ -30,7 +30,7 @@ require 'cfita'
 p Cfita::CodiceFiscale.new('AAABBB50A50F839X')
 => #<Cfita::CodiceFiscale:0x00007fa4efd09558 @fiscal_code="AAABBB50A50F839X", @birth_place=nil, @birth_date=nil, @name=nil, @surname=nil, @sex=nil, @errors=["Checksum errato"]>
 
-p Cfita::CodiceFiscale(
+p Cfita::CodiceFiscale.new(
   'AAABBB50A50F839U',
   birth_place: 'Roma',
   birth_date: '19600530',
@@ -49,6 +49,3 @@ p Cfita::CodiceFiscale(
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
-
-## 
-

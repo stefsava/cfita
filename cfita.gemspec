@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.4'
   s.name        = 'cfita'
   s.version     = Cfita::VERSION
-  s.date        = '2021-06-02'
+  s.date        = '2022-12-10'
   s.summary     = 'Italian fiscal code checker'
   s.description = 'Controllo codici fiscali italiani'
   s.authors     = ['Stefano Savanelli']
