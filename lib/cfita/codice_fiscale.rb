@@ -46,12 +46,14 @@ module Cfita
     def cf_sex
       return @cf_sex if @cf_sex
       case @fiscal_code[9]
+      when nil
       when /[0-3LMNP]/
         @cf_sex = 'M'
       when /[4-7QRST]/
         @cf_sex = 'F'
       else
         @errors << 'Cifra decina giorno di nascita errata'
+        nil
       end
     end
 
@@ -63,10 +65,12 @@ module Cfita
 
     def cf_birth_date
       return @cf_birth_date if @cf_birth_date
+
       yy = cifre(6..7)
       day = cifre(9..10)
+      return unless yy && day
       @errors << 'Cifra decina giorno di nascita errata' if day && day > 71
- 
+
       month = MESI.index(@fiscal_code[8])
       @errors << 'Mese errato' unless month
       return unless yy && month && day
@@ -76,17 +80,15 @@ module Cfita
 
     private
 
-    def codice_catastale 
+    def codice_catastale
       return @codice_catastale if @codice_catastale
-      letter = @fiscal_code[11]
-      numbers =
-        @fiscal_code[12..14]
-        .split(//)
-        .map do |c|
-          i = OMOCODICI.index(c)
-          i ? i.to_s : c
-        end
-        .join
+      return unless letter = @fiscal_code[11]
+      return unless numbers = @fiscal_code[12..14]
+
+      numbers = numbers.chars.map do |c|
+        i = OMOCODICI.index(c)
+        i ? i.to_s : c
+      end.join
       letter + numbers
     end
 
@@ -194,6 +196,8 @@ module Cfita
       result = 0
       range.each do |position|
         char = @fiscal_code[position]
+        return nil unless char
+
         value = CIFRE.index(char)
         @errors << "Carattere '#{char}' errato in posizione #{position}" unless value
         return nil unless value
