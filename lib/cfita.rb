@@ -2,7 +2,7 @@
 
 # controllo codice fiscale italiano
 module Cfita
-  require 'cfita/codice_fiscale'
+  require_relative 'cfita/codice_fiscale'
 
-  VERSION='0.4.0'
+  VERSION='0.5.0'
 end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support/all'
-require 'cfita/codici_catastali'
+require_relative 'codici_catastali'
 
 module Cfita
   # Controllo codice fiscale italiano
@@ -24,7 +24,7 @@ module Cfita
       surname: nil,
       sex: nil
     )
-      @fiscal_code = fiscal_code.upcase.strip
+      @fiscal_code = fiscal_code.to_s.upcase.strip
       @birth_place = birth_place&.upcase
       @birth_date = birth_date
       @birth_date = Date.parse(birth_date) if birth_date.is_a?(String)
