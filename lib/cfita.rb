@@ -4,5 +4,5 @@
 module Cfita
   require_relative 'cfita/codice_fiscale'
 
-  VERSION='0.5.0'
+  VERSION='0.5.1'
 end
